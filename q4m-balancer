@@ -1,6 +1,7 @@
 #!perl
 use strict;
 use DBI;
+use Getopt::Long;
 
 main() unless caller();
 
@@ -77,7 +78,7 @@ sub check_and_balance {
                 $max = $x;
                 $max_key = $key;
             }
-            if (! defined $min) {
+            if (! defined $min || $x < $min) {
                 $min = $x;
             }
         }
@@ -100,11 +101,11 @@ sub distribute {
     my $tables        = $config->{tables};
     my $connect_infos = $config->{connect_info};
 
-    my @keys = grep { $_ ne $from } @$tables;
+    my @keys = grep { $_ ne $from } keys %$connect_infos;
 
-    my $source = DBI->connect( $connect_infos->{$from} );
+    my $source = DBI->connect( @{ $connect_infos->{$from} } );
 
-    my $sth = $source->prepare( "SELECT * FROM $table WHERE queue_wait($table, 1)" );
+    my $sth = $source->prepare( "SELECT * FROM $table WHERE queue_wait('$table', 1)" );
 
     while ( $count ) {
         my $rv = $sth->execute();
@@ -118,8 +119,9 @@ sub distribute {
 
             my $sql = "INSERT INTO $table VALUES (" .
                 join( ",", map { "?" } @$row ) . ")";
-            my $dbh = DBI->connect( $connect_infos->{ $target } );
+            my $dbh = DBI->connect( @{ $connect_infos->{ $target } } );
             $dbh->do( $sql, undef, @$row );
+            $count--;
         }
     }
 }
