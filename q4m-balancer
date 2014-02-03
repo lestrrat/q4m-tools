@@ -47,7 +47,7 @@ sub collect_stats {
     my $tables        = $config->{tables};
 
     my %sizes;
-    foreach my $key ( keys %$connect_infos ) {
+    foreach my $key ( sort keys %$connect_infos ) {
         my $connect_info = $connect_infos->{$key};
         my $dbh = DBI->connect( @{ $connect_info } );
     
@@ -114,6 +114,7 @@ sub distribute {
         }
 
         while ( my $row = $sth->fetchrow_arrayref ) {
+            $dbh->do( "SELECT queue_end()" );
             my $target = shift @keys;
             push @keys, $target;
 
