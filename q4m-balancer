@@ -114,7 +114,7 @@ sub distribute {
         }
 
         while ( my $row = $sth->fetchrow_arrayref ) {
-            $dbh->do( "SELECT queue_end()" );
+            $source->do( "SELECT queue_end()" );
             my $target = shift @keys;
             push @keys, $target;
 
